@@ -28,7 +28,7 @@ import { useTransactions } from "@/components/TransactionProvider";
 
 const BUDGETS_KEY = "spendly_budgets";
 
-const categories = [
+const DEFAULT_BUDGET_CATEGORIES = [
   "Food & Dining",
   "Shopping",
   "Transportation",
@@ -116,6 +116,7 @@ const getCurrentMonth = () => {
 export default function BudgetsPage() {
   const [budgets, setBudgets] = useState([]);
   const [budgetsLoaded, setBudgetsLoaded] = useState(false);
+  const [categories, setCategories] = useState(DEFAULT_BUDGET_CATEGORIES);
   const { transactions, isLoaded: transactionsLoaded } = useTransactions();
   const isLoaded = budgetsLoaded && transactionsLoaded;
 
@@ -132,13 +133,45 @@ export default function BudgetsPage() {
 
   useEffect(() => {
     try {
+      const savedCategories = localStorage.getItem("spendly_categories");
+
+      if (savedCategories) {
+        const parsedCategories = JSON.parse(savedCategories);
+
+        if (Array.isArray(parsedCategories)) {
+          const expenseCategoryNames = parsedCategories
+            .filter((category) => category && category.type === "Expense")
+            .map((category) => String(category.name || "").trim())
+            .filter(Boolean);
+
+          setCategories([
+            ...new Set([...DEFAULT_BUDGET_CATEGORIES, ...expenseCategoryNames]),
+          ]);
+        }
+      }
+    } catch (err) {
+      console.error("Unable to load category data:", err);
+    }
+  }, []);
+
+  useEffect(() => {
+    try {
       const savedBudgets = localStorage.getItem(BUDGETS_KEY);
 
       if (savedBudgets !== null) {
         const parsedBudgets = JSON.parse(savedBudgets);
 
         if (Array.isArray(parsedBudgets)) {
-          setBudgets(parsedBudgets);
+          setBudgets(
+            parsedBudgets.filter(
+              (budget) =>
+                budget &&
+                typeof budget === "object" &&
+                typeof budget.category === "string" &&
+                budget.month &&
+                budget.id
+            )
+          );
         }
       }
 
@@ -179,7 +212,7 @@ export default function BudgetsPage() {
           (transaction) =>
             transaction.type === "Expense" &&
             transaction.category === budget.category &&
-            transaction.date?.startsWith(selectedMonth)
+            String(transaction.date || "").startsWith(selectedMonth)
         )
         .reduce(
           (sum, transaction) => sum + Number(transaction.amount || 0),
@@ -317,6 +350,8 @@ export default function BudgetsPage() {
   };
 
   const changeMonth = (direction) => {
+    if (!/^\d{4}-\d{2}$/.test(selectedMonth)) return;
+
     const [year, month] = selectedMonth.split("-").map(Number);
     const date = new Date(year, month - 1 + direction, 1);
 
@@ -389,7 +424,11 @@ export default function BudgetsPage() {
               <input
                 type="month"
                 value={selectedMonth}
-                onChange={(event) => setSelectedMonth(event.target.value)}
+                onChange={(event) => {
+                  if (/^\d{4}-\d{2}$/.test(event.target.value)) {
+                    setSelectedMonth(event.target.value);
+                  }
+                }}
                 aria-label="Select budget month"
                 className="min-w-0 rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-700 outline-none focus:border-emerald-500"
               />
@@ -453,7 +492,7 @@ export default function BudgetsPage() {
                   Overall spending progress
                 </h2>
                 <p className="mt-1 text-sm text-gray-500">
-                  Total expenses compared with your combined budget limits.
+                  Spending in budgeted categories compared with your combined limits.
                 </p>
               </div>
 
@@ -470,7 +509,7 @@ export default function BudgetsPage() {
                     : "bg-emerald-500"
                 }`}
                 style={{
-                  width: `${Math.min(summary.percentage, 100)}%`,
+                  width: `${Math.min(Math.max(Number(summary.percentage) || 0, 0), 100)}%`,
                 }}
               />
             </div>
@@ -538,8 +577,8 @@ export default function BudgetsPage() {
                     categoryConfig[budget.category] || categoryConfig.Other;
 
                   const Icon = config.icon;
-                  const percentage = Math.round(budget.percentage);
-                  const progressWidth = Math.min(budget.percentage, 100);
+                  const percentage = Math.round(Math.max(budget.percentage || 0, 0));
+                  const progressWidth = Math.min(Math.max(budget.percentage || 0, 0), 100);
 
                   return (
                     <article

@@ -10,8 +10,6 @@ import {
   CalendarDays,
   BarChart3,
   PieChart as PieChartIcon,
-  ArrowUpRight,
-  ArrowDownRight,
 } from "lucide-react";
 
 import {
@@ -189,6 +187,7 @@ export default function AnalyticsPage() {
 
     return Object.entries(grouped)
       .sort(([a], [b]) => a.localeCompare(b))
+      .slice(selectedMonth === "all" ? -14 : -31)
       .map(([date, expenses]) => ({
         date: new Date(`${date}T00:00:00`).toLocaleDateString("en-IN", {
           day: "numeric",
@@ -196,7 +195,7 @@ export default function AnalyticsPage() {
         }),
         expenses,
       }));
-  }, [filteredTransactions]);
+  }, [filteredTransactions, selectedMonth]);
 
   const topCategories = categoryData.slice(0, 5);
 
@@ -576,6 +575,71 @@ export default function AnalyticsPage() {
                   )}
                 </section>
               </div>
+
+              {/* Daily spending */}
+              <section className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm sm:p-6">
+                <div className="flex items-start gap-3">
+                  <div className="rounded-xl bg-rose-50 p-3">
+                    <TrendingDown size={21} className="text-rose-600" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-bold text-gray-900">
+                      Daily Spending
+                    </h2>
+                    <p className="mt-1 text-sm text-gray-500">
+                      {selectedMonth === "all"
+                        ? "Your spending across the latest 14 days with recorded expenses."
+                        : `Daily expenses for ${getMonthLabel(selectedMonth)}.`}
+                    </p>
+                  </div>
+                </div>
+
+                {dailyData.length === 0 ? (
+                  <EmptyChart />
+                ) : (
+                  <div className="mt-7 h-[300px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart
+                        data={dailyData}
+                        margin={{ top: 10, right: 10, left: -12, bottom: 0 }}
+                      >
+                        <CartesianGrid
+                          stroke="#f1f5f9"
+                          strokeDasharray="4 4"
+                          vertical={false}
+                        />
+                        <XAxis
+                          dataKey="date"
+                          axisLine={false}
+                          tickLine={false}
+                          tick={{ fill: "#94a3b8", fontSize: 11 }}
+                          interval={selectedMonth === "all" ? 1 : "preserveStartEnd"}
+                          dy={10}
+                        />
+                        <YAxis
+                          axisLine={false}
+                          tickLine={false}
+                          tick={{ fill: "#94a3b8", fontSize: 11 }}
+                          tickFormatter={formatCompactCurrency}
+                        />
+                        <Tooltip
+                          formatter={(value) => formatCurrency(value)}
+                          contentStyle={{
+                            borderRadius: 12,
+                            border: "1px solid #f1f5f9",
+                          }}
+                        />
+                        <Bar
+                          dataKey="expenses"
+                          name="Expenses"
+                          fill="#f97316"
+                          radius={[5, 5, 0, 0]}
+                        />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                )}
+              </section>
 
               {/* Insights */}
               <section className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm sm:p-6">

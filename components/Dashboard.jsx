@@ -8,8 +8,6 @@ import {
   TrendingUp,
   TrendingDown,
   Plus,
-  ArrowUpRight,
-  ArrowDownLeft,
   ArrowRight,
   Utensils,
   ShoppingBag,
@@ -291,6 +289,66 @@ export default function Dashboard() {
       .slice(0, 4);
   }, [savedBudgets, transactions]);
 
+  const currentMonthInsight = useMemo(() => {
+    const currentMonth = getCurrentMonthKey();
+
+    const currentMonthExpenses = transactions.filter(
+      (transaction) =>
+        transaction.type === "Expense" &&
+        getMonthKey(transaction.date) === currentMonth
+    );
+
+    const monthSpent = currentMonthExpenses.reduce(
+      (sum, transaction) => sum + Number(transaction.amount || 0),
+      0
+    );
+
+    const exceededBudgets = budgetOverview.filter(
+      (budget) => budget.limit > 0 && budget.spent > budget.limit
+    );
+
+    const closestBudget = budgetOverview
+      .filter((budget) => budget.limit > 0 && budget.spent <= budget.limit)
+      .sort((a, b) => b.spent / b.limit - a.spent / a.limit)[0];
+
+    const monthCategoryTotals = currentMonthExpenses.reduce((totals, transaction) => {
+      const category = transaction.category || "Other";
+      totals[category] = (totals[category] || 0) + Number(transaction.amount || 0);
+      return totals;
+    }, {});
+
+    const topCategory = Object.entries(monthCategoryTotals).sort(
+      (a, b) => b[1] - a[1]
+    )[0];
+
+    if (exceededBudgets.length > 0) {
+      const first = exceededBudgets[0];
+      return {
+        title: "Budget limit exceeded",
+        message: `${first.name} is over budget by ${formatCurrency(first.spent - first.limit)}. Review this category to bring spending back on track.`,
+      };
+    }
+
+    if (closestBudget && closestBudget.spent / closestBudget.limit >= 0.8) {
+      return {
+        title: "Budget almost reached",
+        message: `${closestBudget.name} has used ${Math.round((closestBudget.spent / closestBudget.limit) * 100)}% of its monthly budget. Keep an eye on the remaining ${formatCurrency(Math.max(0, closestBudget.limit - closestBudget.spent))}.`,
+      };
+    }
+
+    if (topCategory) {
+      return {
+        title: "Your top spending category",
+        message: `${topCategory[0]} is your largest expense category this month at ${formatCurrency(topCategory[1])}. Total expenses this month are ${formatCurrency(monthSpent)}.`,
+      };
+    }
+
+    return {
+      title: "Ready when you are",
+      message: "Add an expense to see a personalized spending insight here. Your dashboard will update as you record transactions.",
+    };
+  }, [transactions, budgetOverview]);
+
   const spendingByCategory = useMemo(() => {
     const grouped = {};
 
@@ -316,7 +374,7 @@ export default function Dashboard() {
         (item) => selectedType === "All" || item.type === selectedType
       )
       .slice()
-      .sort((a, b) => b.date.localeCompare(a.date))
+      .sort((a, b) => String(b.date || "").localeCompare(String(a.date || "")))
       .slice(0, 5);
   }, [transactions, selectedType]);
 
@@ -804,12 +862,11 @@ export default function Dashboard() {
                 {!budgetsLoaded ? (
                   <p className="py-6 text-center text-sm text-gray-500">Loading budgets...</p>
                 ) : budgetOverview.length > 0 ? budgetOverview.map((budget) => {
-                  const percentage = Math.min(
-                    (budget.spent / budget.limit) * 100,
-                    100
-                  );
-
-                  const exceeded = budget.spent > budget.limit;
+                  const rawPercentage =
+                    budget.limit > 0 ? (budget.spent / budget.limit) * 100 : 0;
+                  const barPercentage = Math.min(Math.max(rawPercentage, 0), 100);
+                  const displayedPercentage = Math.round(Math.max(rawPercentage, 0));
+                  const exceeded = budget.limit > 0 && budget.spent > budget.limit;
 
                   return (
                     <div key={budget.name}>
@@ -818,7 +875,7 @@ export default function Dashboard() {
                           {budget.name}
                         </span>
                         <span className="text-xs text-gray-500">
-                          {Math.round(percentage)}%
+                          {displayedPercentage}%
                         </span>
                       </div>
 
@@ -826,7 +883,7 @@ export default function Dashboard() {
                         <div
                           className="h-full rounded-full transition-all"
                           style={{
-                            width: `${percentage}%`,
+                            width: `${barPercentage}%`,
                             backgroundColor: exceeded
                               ? "#ef4444"
                               : budget.color,
@@ -863,11 +920,10 @@ export default function Dashboard() {
 
                   <div>
                     <p className="text-sm font-semibold text-gray-900">
-                      Stay on track
+                      {currentMonthInsight.title}
                     </p>
                     <p className="mt-1 text-xs leading-5 text-gray-600">
-                      Review your budgets regularly to stay in control of
-                      your spending.
+                      {currentMonthInsight.message}
                     </p>
                   </div>
                 </div>
