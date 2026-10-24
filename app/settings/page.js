@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTransactions } from "@/components/TransactionProvider";
 import {
   UserRound,
@@ -14,12 +14,51 @@ import {
 } from "lucide-react";
 import AppLayout from "@/components/AppLayout";
 
+
+const SettingSection = ({ icon: Icon, title, description, children }) => (
+  <section className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+    <div className="mb-6 flex items-start gap-3">
+      <div className="rounded-xl bg-emerald-50 p-3 text-emerald-700">
+        <Icon size={20} />
+      </div>
+      <div>
+        <h2 className="font-semibold text-gray-900">{title}</h2>
+        <p className="mt-1 text-sm text-gray-500">{description}</p>
+      </div>
+    </div>
+    {children}
+  </section>
+);
+
+const Toggle = ({ checked, onChange, label, description }) => (
+  <div className="flex items-center justify-between gap-4 py-3">
+    <div>
+      <p className="text-sm font-medium text-gray-800">{label}</p>
+      <p className="mt-1 text-xs text-gray-500">{description}</p>
+    </div>
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      onClick={() => onChange(!checked)}
+      className={`relative h-6 w-11 shrink-0 rounded-full transition ${
+        checked ? "bg-emerald-600" : "bg-gray-300"
+      }`}
+    >
+      <span
+        className={`absolute top-1 h-4 w-4 rounded-full bg-white transition ${
+          checked ? "left-6" : "left-1"
+        }`}
+      />
+    </button>
+  </div>
+);
+
 export default function SettingsPage() {
   const { transactions, clearTransactions: clearStoredTransactions, isLoaded } = useTransactions();
-  const [profile, setProfile] = useState({
-    name: "Spendly User",
-    email: "",
-  });
+  // Uncontrolled inputs avoid focus loss if a parent rerenders while typing.
+  const nameInputRef = useRef(null);
+  const emailInputRef = useRef(null);
 
   const [preferences, setPreferences] = useState({
     budgetAlerts: true,
@@ -33,16 +72,22 @@ export default function SettingsPage() {
       const savedProfile = localStorage.getItem("spendly_profile");
       const savedPreferences = localStorage.getItem("spendly_preferences");
 
-      if (savedProfile) setProfile(JSON.parse(savedProfile));
-      if (savedPreferences) {
-        setPreferences(JSON.parse(savedPreferences));
+      if (savedProfile) {
+        const parsedProfile = JSON.parse(savedProfile);
+        if (nameInputRef.current) nameInputRef.current.value = parsedProfile.name ?? "";
+        if (emailInputRef.current) emailInputRef.current.value = parsedProfile.email ?? "";
       }
+      if (savedPreferences) setPreferences(JSON.parse(savedPreferences));
     } catch (error) {
       console.error("Unable to load settings:", error);
     }
   }, []);
 
   const saveSettings = () => {
+    const profile = {
+      name: nameInputRef.current?.value ?? "",
+      email: emailInputRef.current?.value ?? "",
+    };
     localStorage.setItem("spendly_profile", JSON.stringify(profile));
     localStorage.setItem(
       "spendly_preferences",
@@ -97,44 +142,7 @@ export default function SettingsPage() {
     clearStoredTransactions();
   };
 
-  const SettingSection = ({ icon: Icon, title, description, children }) => (
-    <section className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
-      <div className="mb-6 flex items-start gap-3">
-        <div className="rounded-xl bg-emerald-50 p-3 text-emerald-700">
-          <Icon size={20} />
-        </div>
-        <div>
-          <h2 className="font-semibold text-gray-900">{title}</h2>
-          <p className="mt-1 text-sm text-gray-500">{description}</p>
-        </div>
-      </div>
-      {children}
-    </section>
-  );
 
-  const Toggle = ({ checked, onChange, label, description }) => (
-    <div className="flex items-center justify-between gap-4 py-3">
-      <div>
-        <p className="text-sm font-medium text-gray-800">{label}</p>
-        <p className="mt-1 text-xs text-gray-500">{description}</p>
-      </div>
-      <button
-        type="button"
-        role="switch"
-        aria-checked={checked}
-        onClick={() => onChange(!checked)}
-        className={`relative h-6 w-11 shrink-0 rounded-full transition ${
-          checked ? "bg-emerald-600" : "bg-gray-300"
-        }`}
-      >
-        <span
-          className={`absolute top-1 h-4 w-4 rounded-full bg-white transition ${
-            checked ? "left-6" : "left-1"
-          }`}
-        />
-      </button>
-    </div>
-  );
 
   return (
     <AppLayout>
@@ -164,10 +172,8 @@ export default function SettingsPage() {
                     Display name
                   </label>
                   <input
-                    value={profile.name}
-                    onChange={(e) =>
-                      setProfile({ ...profile, name: e.target.value })
-                    }
+                    ref={nameInputRef}
+                    defaultValue="Spendly User"
                     placeholder="Your name"
                     className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
                   />
@@ -178,11 +184,9 @@ export default function SettingsPage() {
                     Email address
                   </label>
                   <input
+                    ref={emailInputRef}
                     type="email"
-                    value={profile.email}
-                    onChange={(e) =>
-                      setProfile({ ...profile, email: e.target.value })
-                    }
+                    defaultValue=""
                     placeholder="you@example.com"
                     className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
                   />
