@@ -3,41 +3,9 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import {
-  Wallet,
-  TrendingUp,
-  TrendingDown,
-  Plus,
-  ArrowRight,
-  Utensils,
-  ShoppingBag,
-  Car,
-  Clapperboard,
-  Receipt,
-  HeartPulse,
-  GraduationCap,
-  Plane,
-  MoreHorizontal,
-  BriefcaseBusiness,
-  Laptop,
-  Gift,
-  CircleDollarSign,
-  CalendarDays,
-  CreditCard,
-} from "lucide-react";
+import {Wallet,TrendingUp,TrendingDown,Plus,ArrowRight,Utensils,ShoppingBag,Car,Clapperboard,Receipt,HeartPulse,GraduationCap,Plane,MoreHorizontal,BriefcaseBusiness,Laptop,Gift,CircleDollarSign,CalendarDays,CreditCard,} from "lucide-react";
 
-import {
-  ResponsiveContainer,
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  PieChart,
-  Pie,
-  Cell,
-} from "recharts";
+import {ResponsiveContainer,AreaChart,Area,XAxis,YAxis,CartesianGrid,Tooltip,PieChart,Pie,Cell,} from "recharts";
 
 import AppLayout from "./AppLayout";
 import AddTransactionModal from "./AddTransactionModal";
