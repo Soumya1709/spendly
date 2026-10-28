@@ -265,18 +265,7 @@ export default function SettingsPage() {
               </div>
             </SettingSection>
 
-            {/* <SettingSection
-              icon={ShieldCheck}
-              title="Privacy & storage"
-              description="Understand where your current app data is stored."
-            >
-              <p className="text-sm leading-6 text-gray-600">
-                Spendly currently stores transactions and preferences in this
-                browser&apos;s local storage. They are not synced across
-                devices, and clearing browser data may remove them. This is
-                local storage, not a cloud backup.
-              </p>
-            </SettingSection> */}
+            
 
             <div className="flex flex-wrap items-center justify-end gap-3">
               {saved && (
