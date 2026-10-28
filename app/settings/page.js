@@ -89,6 +89,7 @@ export default function SettingsPage() {
       email: emailInputRef.current?.value ?? "",
     };
     localStorage.setItem("spendly_profile", JSON.stringify(profile));
+    window.dispatchEvent(new Event("spendly-profile-updated"));
     localStorage.setItem(
       "spendly_preferences",
       JSON.stringify(preferences)
@@ -264,7 +265,7 @@ export default function SettingsPage() {
               </div>
             </SettingSection>
 
-            <SettingSection
+            {/* <SettingSection
               icon={ShieldCheck}
               title="Privacy & storage"
               description="Understand where your current app data is stored."
@@ -275,7 +276,7 @@ export default function SettingsPage() {
                 devices, and clearing browser data may remove them. This is
                 local storage, not a cloud backup.
               </p>
-            </SettingSection>
+            </SettingSection> */}
 
             <div className="flex flex-wrap items-center justify-end gap-3">
               {saved && (

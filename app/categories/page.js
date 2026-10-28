@@ -416,26 +416,7 @@ export default function CategoriesPage() {
             </div>
           )}
 
-          <div className="mt-6 rounded-2xl border border-emerald-100 bg-emerald-50/60 p-4">
-            <div className="flex gap-3">
-              <TrendingUp
-                size={20}
-                className="mt-0.5 shrink-0 text-emerald-700"
-              />
-              <div>
-                <p className="text-sm font-semibold text-emerald-900">
-                  Keep your categories consistent
-                </p>
-                <p className="mt-1 text-sm leading-6 text-emerald-800">
-                  Transaction totals are matched using category names. When
-                  renaming a category here, existing transactions are updated
-                  too. New categories will be available in your category
-                  manager, but your transaction form must read this saved list
-                  to offer them automatically.
-                </p>
-              </div>
-            </div>
-          </div>
+          
         </div>
 
         {showModal && (

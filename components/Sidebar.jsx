@@ -1,6 +1,7 @@
 
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -10,7 +11,6 @@ import {
   ChartNoAxesCombined,
   Tags,
   Settings,
-  CircleHelp,
   Leaf,
   X,
 } from "lucide-react";
@@ -24,8 +24,49 @@ const navigation = [
   { label: "Settings", href: "/settings", icon: Settings },
 ];
 
+const PROFILE_KEY = "spendly_profile";
+const DEFAULT_NAME = "Spendly User";
+
 export default function Sidebar({ open, onClose }) {
   const pathname = usePathname();
+  const [userName, setUserName] = useState(DEFAULT_NAME);
+
+  useEffect(() => {
+    const loadProfile = () => {
+      try {
+        const savedProfile = localStorage.getItem(PROFILE_KEY);
+        const profile = savedProfile ? JSON.parse(savedProfile) : {};
+        setUserName(
+          typeof profile.name === "string" && profile.name.trim()
+            ? profile.name.trim()
+            : DEFAULT_NAME
+        );
+      } catch (error) {
+        console.error("Unable to load user profile:", error);
+        setUserName(DEFAULT_NAME);
+      }
+    };
+
+    loadProfile();
+
+    // Updates when Settings saves the profile in this tab.
+    window.addEventListener("spendly-profile-updated", loadProfile);
+
+    // Updates when localStorage changes in another tab.
+    window.addEventListener("storage", loadProfile);
+
+    return () => {
+      window.removeEventListener("spendly-profile-updated", loadProfile);
+      window.removeEventListener("storage", loadProfile);
+    };
+  }, []);
+
+  const initials = userName
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((word) => word[0].toUpperCase())
+    .join("");
 
   return (
     <>
@@ -100,25 +141,14 @@ export default function Sidebar({ open, onClose }) {
           </nav>
         </div>
 
-        <div className="mt-auto rounded-2xl bg-emerald-50 p-4">
-          <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-xl bg-white text-emerald-700">
-            <CircleHelp size={19} />
+        <div className="mt-auto flex items-center gap-3 border-t border-gray-100 px-2 pt-4">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-sm font-semibold text-emerald-800">
+            {initials || "SU"}
           </div>
-          <p className="text-sm font-semibold text-gray-900">
-            Need a hand?
-          </p>
-          <p className="mt-1 text-xs leading-5 text-gray-500">
-            Keep your finances organized with Spendly.
-          </p>
-        </div>
 
-        <div className="mt-4 flex items-center gap-3 border-t border-gray-100 px-2 pt-4">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-100 text-sm font-semibold text-emerald-800">
-            SS
-          </div>
-          <div>
-            <p className="text-sm font-semibold text-gray-800">
-              My Account
+          <div className="min-w-0">
+            <p className="truncate text-sm font-semibold text-gray-800">
+              {userName}
             </p>
             <p className="text-xs text-gray-400">
               Personal workspace
